@@ -9,9 +9,16 @@
 
 import SwiftUI
 
+struct DailyItem {
+    var date: Date
+    var count: Int
+}
+
 struct ContentView: View {
+    
+    
     @State var startDate: Date = Date()
-    @State var dailyRoutines: [Date] = [Date]()
+    @State var dailyRoutines: [DailyItem] = [DailyItem]()
     @State var resultString = ""
     
     let userDefaults = UserDefaults.standard
@@ -32,8 +39,8 @@ struct ContentView: View {
     
     func onSetStartDate(_ newStartDate: Date) {
         dailyRoutines = DailyRoutineHelper.getTodayRoutine(newStartDate, Date.now)
-        resultString = dailyRoutines.reduce("", {x, date in
-            x + "\n\(date.formatted(date: .numeric, time: .omitted))"
+        resultString = dailyRoutines.reduce("", {x, item in
+            x + "\n\(item.date.formatted(date: .numeric, time: .omitted)) (\(NumberFormatter.localizedString(from: NSNumber(value: item.count), number: .ordinal)))"
         })
     }
 }
@@ -43,19 +50,19 @@ struct ContentView: View {
  124天前的内容不需要再复习了
  */
 struct DailyRoutineHelper {
-    static func getTodayRoutine(_ startDate: Date, _ today: Date) -> [Date] {
+    static func getTodayRoutine(_ startDate: Date, _ today: Date) -> [DailyItem] {
         let kSecondsOfADay = 24 * 60 * 60
         let reviewDays = [0, 1, 3, 6, 13, 28, 59, 122]
         
         var unfinishedStartDate = max(startDate, today.advanced(by: TimeInterval(-(124 * kSecondsOfADay))))
         
-        var result: [Date] = []
+        var result: [DailyItem] = []
         
         while (unfinishedStartDate <= today) {
-            for day in reviewDays {
+            for (index, day) in reviewDays.enumerated() {
                 let date = unfinishedStartDate.advanced(by: TimeInterval(day * kSecondsOfADay))
                 if Calendar.current.isDateInToday(date) {
-                    result.append(unfinishedStartDate)
+                    result.append(DailyItem(date: unfinishedStartDate, count: index))
                     break
                 } else if date > today {
                     break
