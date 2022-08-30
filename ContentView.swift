@@ -9,13 +9,16 @@
 
 import SwiftUI
 
-struct DailyItem {
+struct DailyItem: CustomStringConvertible {
     var date: Date
     var count: Int
+    
+    var description: String {
+        "\(date.formatted(date: .numeric, time: .omitted)) (\(NumberFormatter.localizedString(from: NSNumber(value: count), number: .ordinal)))"
+    }
 }
 
 struct ContentView: View {
-    
     
     @State var startDate: Date = Date()
     @State var dailyRoutines: [DailyItem] = [DailyItem]()
@@ -34,13 +37,13 @@ struct ContentView: View {
             onSetStartDate(startDate)
         }
         // 今天所有需要复习的日期
-        Text("routines: \(resultString)").frame(minHeight:168, alignment: .topLeading).foregroundColor(Color.orange)
+        Text("routines:\n \(resultString)").frame(minHeight:168, alignment: .topLeading).foregroundColor(Color.orange)
     }
     
     func onSetStartDate(_ newStartDate: Date) {
         dailyRoutines = DailyRoutineHelper.getTodayRoutine(newStartDate, Date.now)
         resultString = dailyRoutines.reduce("", {x, item in
-            x + "\n\(item.date.formatted(date: .numeric, time: .omitted)) (\(NumberFormatter.localizedString(from: NSNumber(value: item.count), number: .ordinal)))"
+            x + "\(item)\n"
         })
     }
 }
@@ -52,23 +55,13 @@ struct ContentView: View {
 struct DailyRoutineHelper {
     static func getTodayRoutine(_ startDate: Date, _ today: Date) -> [DailyItem] {
         let kSecondsOfADay = 24 * 60 * 60
-        let reviewDays = [0, 1, 3, 6, 13, 28, 59, 122]
-        
-        var unfinishedStartDate = max(startDate, today.advanced(by: TimeInterval(-(124 * kSecondsOfADay))))
+        let reviewDurations = [0, 1, 3, 6, 13, 28, 59, 122]
         
         var result: [DailyItem] = []
-        
-        while (unfinishedStartDate <= today) {
-            for (index, day) in reviewDays.enumerated() {
-                let date = unfinishedStartDate.advanced(by: TimeInterval(day * kSecondsOfADay))
-                if Calendar.current.isDateInToday(date) {
-                    result.append(DailyItem(date: unfinishedStartDate, count: index))
-                    break
-                } else if date > today {
-                    break
-                }
-            }
-            unfinishedStartDate.addTimeInterval(TimeInterval(kSecondsOfADay))
+        for (index, durationDay) in reviewDurations.enumerated() {
+            let date = today.advanced(by: TimeInterval(-durationDay * kSecondsOfADay))
+            if (date < startDate) { break }
+            result.insert(DailyItem(date: date, count: index), at: 0)
         }
         
         return result
