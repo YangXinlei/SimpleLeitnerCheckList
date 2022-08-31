@@ -13,8 +13,16 @@ struct DailyItem: CustomStringConvertible {
     var date: Date
     var count: Int
     
+    var formatedDate: String {
+        return date.formatted(date: .numeric, time: .omitted)
+    }
+    
+    var formatedCount: String {
+        return NumberFormatter.localizedString(from: NSNumber(value: count), number: .ordinal)
+    }
+    
     var description: String {
-        "\(date.formatted(date: .numeric, time: .omitted)) (\(NumberFormatter.localizedString(from: NSNumber(value: count), number: .ordinal)))"
+        return formatedDate + " " + formatedCount
     }
 }
 
@@ -22,29 +30,45 @@ struct ContentView: View {
     
     @State var startDate: Date = Date()
     @State var dailyRoutines: [DailyItem] = [DailyItem]()
-    @State var resultString = ""
     
     let userDefaults = UserDefaults.standard
     @AppStorage("kStartDate") private var storedStartDate: TimeInterval = Date().timeIntervalSince1970
     
     var body: some View {
-        DatePicker("Pick Start Date", selection: $startDate, in: ...Date(), displayedComponents:[.date]).onChange(of: startDate) { newValue in
-            userDefaults.set(newValue.timeIntervalSince1970, forKey: "kStartDate")
-            onSetStartDate(newValue)
+        VStack() {
+            Spacer()
+            // 今天所有需要复习的日期
+            List {
+                Section {
+                    ForEach(dailyRoutines, id:\.date) { item in
+                        Text(item.formatedDate + " ").foregroundColor(Color.white)
+                        +
+                        Text(item.formatedCount)
+                            .foregroundColor(Color.gray)
+                            .font(.footnote)
+                            
+                    }
+                } header: {
+                    Text("Today's review list")
+                }
+
+            }.listStyle(.plain)
+                .disabled(true)
             
-        }.onAppear {
-            startDate = Date(timeIntervalSince1970: storedStartDate)
-            onSetStartDate(startDate)
+            Spacer()
+            DatePicker("Pick Start Date", selection: $startDate, in: ...Date(), displayedComponents:[.date]).onChange(of: startDate) { newValue in
+                userDefaults.set(newValue.timeIntervalSince1970, forKey: "kStartDate")
+                onSetStartDate(newValue)
+                
+            }.onAppear {
+                startDate = Date(timeIntervalSince1970: storedStartDate)
+                onSetStartDate(startDate)
+            }.frame(maxWidth: 300)
         }
-        // 今天所有需要复习的日期
-        Text("routines:\n \(resultString)").frame(minHeight:168, alignment: .topLeading).foregroundColor(Color.orange)
     }
     
     func onSetStartDate(_ newStartDate: Date) {
         dailyRoutines = DailyRoutineHelper.getTodayRoutine(newStartDate, Date.now)
-        resultString = dailyRoutines.reduce("", {x, item in
-            x + "\(item)\n"
-        })
     }
 }
 
@@ -65,5 +89,14 @@ struct DailyRoutineHelper {
         }
         
         return result
+    }
+}
+
+struct ContentView_Preview: PreviewProvider {
+    static var previews: some View {
+        return Group {
+            ContentView().previewDevice("iPad mini (6th generation)").preferredColorScheme(.dark).previewInterfaceOrientation(.portraitUpsideDown)
+            ContentView().preferredColorScheme(.dark)
+        }
     }
 }
