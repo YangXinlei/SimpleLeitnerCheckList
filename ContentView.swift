@@ -18,6 +18,9 @@ struct DailyItem: CustomStringConvertible {
     }
     
     var formatedCount: String {
+        if count == 0 {
+            return "Today"
+        }
         return NumberFormatter.localizedString(from: NSNumber(value: count), number: .ordinal)
     }
     
@@ -41,19 +44,23 @@ struct ContentView: View {
             List {
                 Section {
                     ForEach(dailyRoutines, id:\.date) { item in
-                        Text(item.formatedDate + " ").foregroundColor(Color.white)
-                        +
-                        Text(item.formatedCount)
-                            .foregroundColor(Color.gray)
-                            .font(.footnote)
-                            
+                        Button {
+                            let noteName = item.formatedDate
+                            print(noteName)
+                            UIApplication.shared.open(URL(string:"shortcuts://run-shortcut?name=DailyRoutine&input=\(noteName)")!)
+                        } label: {
+                            Text(item.formatedDate + " ").foregroundColor(Color.white.opacity(item.count == 0 ? 0.6 : 1.0))
+                            +
+                            Text(item.formatedCount)
+                                .foregroundColor(item.count == 0 ? Color.orange.opacity(0.6) : Color.gray)
+                                .font(.footnote)
+                        }
                     }
                 } header: {
                     Text("Today's review list")
                 }
 
             }.listStyle(.plain)
-                .disabled(true)
             
             Spacer()
             DatePicker("Pick Start Date", selection: $startDate, in: ...Date(), displayedComponents:[.date]).onChange(of: startDate) { newValue in
