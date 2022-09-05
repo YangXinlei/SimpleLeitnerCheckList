@@ -53,12 +53,12 @@ struct ContentView: View {
                             NSWorkspace.shared.open(url)
                             #endif
                         } label: {
-                            Text(item.formatedDate + " ").foregroundColor(Color.white.opacity(item.count == 0 ? 0.6 : 1.0))
+                            Text(item.formatedDate + " ")
                             +
                             Text(item.formatedCount)
-                                .foregroundColor(item.count == 0 ? Color.orange.opacity(0.6) : Color.gray)
+                                .foregroundColor(item.count == 0 ? Color.orange : Color.gray)
                                 .font(.footnote)
-                        }
+                        }.opacity(item.count == 0 ? 0.6 : 1.0)
                     }
                 } header: {
                     Text("Today's review list")
