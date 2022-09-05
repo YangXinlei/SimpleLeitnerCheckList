@@ -46,8 +46,12 @@ struct ContentView: View {
                     ForEach(dailyRoutines, id:\.date) { item in
                         Button {
                             let noteName = item.formatedDate
-                            print(noteName)
-                            UIApplication.shared.open(URL(string:"shortcuts://run-shortcut?name=DailyRoutine&input=\(noteName)")!)
+                            let url = URL(string:"shortcuts://run-shortcut?name=DailyRoutine&input=\(noteName)")!
+                            #if canImport(UIKit)
+                            UIApplication.shared.open(url)
+                            #else
+                            NSWorkspace.shared.open(url)
+                            #endif
                         } label: {
                             Text(item.formatedDate + " ").foregroundColor(Color.white.opacity(item.count == 0 ? 0.6 : 1.0))
                             +
