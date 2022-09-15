@@ -11,11 +11,11 @@ import SwiftUI
 
 #if os(iOS)
 typealias Application = UIApplication
-let DailyRoutineShotcut = "DailyRoutine(iOS16)"
 #elseif os(macOS)
 typealias Application = NSWorkspace
-let DailyRoutineShotcut = "DailyRoutine"
 #endif
+let DailyRoutineShortcut = "DailyRoutine"
+let DailyRoutineShortcut_iOS16 = "DailyRoutine(iOS16)"
 
 struct DailyItem: CustomStringConvertible {
     var date: Date
@@ -54,7 +54,13 @@ struct ContentView: View {
                     ForEach(dailyRoutines, id:\.date) { item in
                         Button {
                             let noteName = item.formatedDate
-                            let url = URL(string:"shortcuts://run-shortcut?name=\(DailyRoutineShotcut)&input=\(noteName)")!
+                            var shortcutName = DailyRoutineShortcut
+#if os(iOS)
+                            if #available(iOS 16, *) {
+                                shortcutName = DailyRoutineShortcut_iOS16
+                            }
+#endif
+                            let url = URL(string:"shortcuts://run-shortcut?name=\(shortcutName)&input=\(noteName)")!
                             Application.shared.open(url)
                         } label: {
                             Text(item.formatedDate + " ")
