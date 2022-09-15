@@ -9,6 +9,14 @@
 
 import SwiftUI
 
+#if os(iOS)
+typealias Application = UIApplication
+let DailyRoutineShotcut = "DailyRoutine(iOS16)"
+#elseif os(macOS)
+typealias Application = NSWorkspace
+let DailyRoutineShotcut = "DailyRoutine"
+#endif
+
 struct DailyItem: CustomStringConvertible {
     var date: Date
     var count: Int
@@ -46,13 +54,8 @@ struct ContentView: View {
                     ForEach(dailyRoutines, id:\.date) { item in
                         Button {
                             let noteName = item.formatedDate
-                            #if canImport(UIKit)
-                            let url = URL(string:"shortcuts://run-shortcut?name=DailyRoutine&input=\(noteName)")!
-                            UIApplication.shared.open(url)
-                            #elseif os(macOS)
-                            let url = URL(string:"shortcuts://run-shortcut?name=DailyRoutine_Mac&input=\(noteName)")!
-                            NSWorkspace.shared.open(url)
-                            #endif
+                            let url = URL(string:"shortcuts://run-shortcut?name=\(DailyRoutineShotcut)&input=\(noteName)")!
+                            Application.shared.open(url)
                         } label: {
                             Text(item.formatedDate + " ")
                             +
