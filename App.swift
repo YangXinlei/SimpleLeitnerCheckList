@@ -14,8 +14,9 @@ typealias Application = UIApplication
 #elseif os(macOS)
 typealias Application = NSWorkspace
 #endif
-let DailyRoutineShortcut = "DailyRoutine"
-let DailyRoutineShortcut_iOS16 = "DailyRoutine(iOS16)"
+let DailyRoutineShortcut = "DailyRoutine_Old"
+let DailyRoutineShortcut_iOS16 = "DailyRoutine"
+
 
 struct DailyItem: CustomStringConvertible {
     var date: Date
@@ -37,10 +38,21 @@ struct DailyItem: CustomStringConvertible {
     }
 }
 
+extension DailyItem : Hashable {
+    var hashValue: Int {
+        return date.hashValue
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(date)
+    }
+}
+
 struct ContentView: View {
     
     @State var startDate: Date = Date()
     @State var dailyRoutines: [DailyItem] = [DailyItem]()
+    @State var clickedItems = Set<DailyItem>()
     
     let userDefaults = UserDefaults.standard
     @AppStorage("kStartDate") private var storedStartDate: TimeInterval = Date().timeIntervalSince1970
@@ -52,7 +64,9 @@ struct ContentView: View {
             List {
                 Section {
                     ForEach(dailyRoutines, id:\.date) { item in
+                        
                         Button {
+                            clickedItems.insert(item)
                             let noteName = item.formatedDate
                             var shortcutName = DailyRoutineShortcut
 #if os(iOS)
@@ -68,7 +82,7 @@ struct ContentView: View {
                             Text(item.formatedCount)
                                 .foregroundColor(item.count == 0 ? Color.orange : Color.gray)
                                 .font(.footnote)
-                        }.opacity(item.count == 0 ? 0.6 : 1.0)
+                        }.opacity(item.count == 0 || clickedItems.contains(item) ? 0.6 : 1.0)
                     }
                 } header: {
                     Text("Today's review list")
