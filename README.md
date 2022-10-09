@@ -7,3 +7,10 @@ demo:
 
 ![demo](https://github.com/YangXinlei/SimpleLeitnerCheckList/blob/master/demo.gif)
 
+
+## TODO
+
+- [ ] 前一天 、 后一天
+- [ ] 跳过今天(未启动检测->自动跳过)
+- [ ] 
+- [ ] 替换备忘录
