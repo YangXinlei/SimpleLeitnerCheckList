@@ -26,8 +26,12 @@ struct DailyItem: CustomStringConvertible {
         return date.formatted(date: .numeric, time: .omitted)
     }
     
+    var isToday: Bool {
+        return Calendar.current.isDateInToday(date)
+    }
+    
     var formatedCount: String {
-        if count == 0 {
+        if isToday {
             return "Today"
         }
         return NumberFormatter.localizedString(from: NSNumber(value: count), number: .ordinal)
@@ -51,6 +55,7 @@ extension DailyItem : Hashable {
 struct ContentView: View {
     
     @State var startDate: Date = Date()
+    @State var showYesterday = false
     @State var dailyRoutines: [DailyItem] = [DailyItem]()
     @State var clickedItems = Set<DailyItem>()
     
@@ -80,30 +85,40 @@ struct ContentView: View {
                             Text(item.formatedDate + " ")
                             +
                             Text(item.formatedCount)
-                                .foregroundColor(item.count == 0 ? Color.orange : Color.gray)
+                                .foregroundColor(item.isToday ? Color.orange : Color.gray)
                                 .font(.footnote)
-                        }.opacity(item.count == 0 || clickedItems.contains(item) ? 0.6 : 1.0)
+                        }.opacity(item.isToday || clickedItems.contains(item) ? 0.6 : 1.0)
                     }
                 } header: {
-                    Text("Today's review list")
+                    Text("\(showYesterday ? "Yesterday" : "Today")'s review list")
                 }
 
             }.listStyle(.plain)
             
             Spacer()
+            
+            Toggle("Review Yesterday", isOn: $showYesterday).onChange(of: showYesterday) { newValue in
+                updateDalyRoutines(startDate, newValue)
+            }.padding()
+            
+            Spacer()
             DatePicker("Pick Start Date", selection: $startDate, in: ...Date(), displayedComponents:[.date]).onChange(of: startDate) { newValue in
                 userDefaults.set(newValue.timeIntervalSince1970, forKey: "kStartDate")
-                onSetStartDate(newValue)
+                updateDalyRoutines(newValue, showYesterday)
                 
             }.onAppear {
                 startDate = Date(timeIntervalSince1970: storedStartDate)
-                onSetStartDate(startDate)
+                updateDalyRoutines(startDate, showYesterday)
             }.frame(maxWidth: 300)
         }
     }
     
-    func onSetStartDate(_ newStartDate: Date) {
-        dailyRoutines = DailyRoutineHelper.getTodayRoutine(newStartDate, Date.now)
+    func updateDalyRoutines(_ newStartDate: Date, _ showYesterday: Bool) {
+        var reviewDate = Date.now
+        if (showYesterday) {
+            reviewDate = reviewDate.advanced(by: -1 * 24 * 60 * 60)
+        }
+        dailyRoutines = DailyRoutineHelper.getRoutine(newStartDate, reviewDate)
     }
 }
 
@@ -112,13 +127,13 @@ struct ContentView: View {
  124天前的内容不需要再复习了
  */
 struct DailyRoutineHelper {
-    static func getTodayRoutine(_ startDate: Date, _ today: Date) -> [DailyItem] {
+    static func getRoutine(_ startDate: Date, _ reviewDate: Date) -> [DailyItem] {
         let kSecondsOfADay = 24 * 60 * 60
         let reviewDurations = [0, 1, 3, 6, 13, 28, 59, 122]
         
         var result: [DailyItem] = []
         for (index, durationDay) in reviewDurations.enumerated() {
-            let date = today.advanced(by: TimeInterval(-durationDay * kSecondsOfADay))
+            let date = reviewDate.advanced(by: TimeInterval(-durationDay * kSecondsOfADay))
             if (date < startDate) { break }
             result.insert(DailyItem(date: date, count: index), at: 0)
         }
