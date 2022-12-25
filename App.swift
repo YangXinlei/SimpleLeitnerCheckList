@@ -55,7 +55,7 @@ extension DailyItem : Hashable {
 struct ContentView: View {
     
     @State var startDate: Date = Date()
-    @State var showYesterday = false
+    @State var reviewDate: Date = Date()
     @State var dailyRoutines: [DailyItem] = [DailyItem]()
     @State var clickedItems = Set<DailyItem>()
     
@@ -90,35 +90,23 @@ struct ContentView: View {
                         }.opacity(item.isToday || clickedItems.contains(item) ? 0.6 : 1.0)
                     }
                 } header: {
-                    Text("\(showYesterday ? "Yesterday" : "Today")'s review list")
+                    Text("\(reviewDate.formatted(date: .long, time: .omitted))'s review list")
                 }
 
             }.listStyle(.plain)
             
             Spacer()
-            
-            Toggle("Review Yesterday", isOn: $showYesterday).onChange(of: showYesterday) { newValue in
+            DatePicker("Pick Review Date", selection: $reviewDate, in: ...Date(), displayedComponents:[.date]).onChange(of: reviewDate) { newValue in
                 updateDalyRoutines(startDate, newValue)
-            }.padding()
-            
-            Spacer()
-            DatePicker("Pick Start Date", selection: $startDate, in: ...Date(), displayedComponents:[.date]).onChange(of: startDate) { newValue in
-                userDefaults.set(newValue.timeIntervalSince1970, forKey: "kStartDate")
-                updateDalyRoutines(newValue, showYesterday)
-                
-            }.onAppear {
-                startDate = Date(timeIntervalSince1970: storedStartDate)
-                updateDalyRoutines(startDate, showYesterday)
-            }.frame(maxWidth: 300)
+            }.datePickerStyle(GraphicalDatePickerStyle())
+        }.onAppear {
+            startDate = Date(timeIntervalSince1970: storedStartDate)
+            updateDalyRoutines(startDate, reviewDate)
         }
     }
     
-    func updateDalyRoutines(_ newStartDate: Date, _ showYesterday: Bool) {
-        var reviewDate = Date.now
-        if (showYesterday) {
-            reviewDate = reviewDate.advanced(by: -1 * 24 * 60 * 60)
-        }
-        dailyRoutines = DailyRoutineHelper.getRoutine(newStartDate, reviewDate)
+    func updateDalyRoutines(_ startDate: Date, _ reviewDate: Date) {
+        dailyRoutines = DailyRoutineHelper.getRoutine(startDate, reviewDate)
     }
 }
 
